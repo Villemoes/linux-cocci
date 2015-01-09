@@ -55,7 +55,7 @@ expression rule1a.s;
 position rule1a.p;
 identifier rule1b.ss;
 @@
-- sprintf@(dst, s);
+- sprintf@p(dst, s);
 + strcpy(dst, ss);
 
 @rule2 depends on patch@
