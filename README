@@ -1,0 +1,23 @@
+These are some coccinelle scripts which may be useful on the linux
+kernel. For the most part, I haven't tried to get them into the kernel
+tree, for various reasons. Some were just used to find and fix a
+certain issue which is unlikely to appear again. Others produce too
+many false positives, while yet others deal with things which is
+likely not worth the churn to fix (such as pointing out missing
+va_end()).
+
+printf_abuse: This directory contains semantic patches for replacing
+certain printf calls by simpler equivalents. For example,
+'sprintf(buf, "%s", s);' can always be replaced by 'strcpy(buf,
+s);'. However, if the return value of sprintf is used, one has to be a
+bit more careful.
+
+devnull: This is where .cocci files go when they've served their purpose.
+
+misc: Stuff I haven't categorized yet.
+
+qnd: quick'n'dirty scripts.
+
+wtf: This directory is for scripts detecting stuff such as double
+inequalities that don't work in C as they do in Python and
+mathematics.
