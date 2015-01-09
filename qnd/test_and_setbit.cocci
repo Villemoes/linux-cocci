@@ -22,8 +22,10 @@
 //    9:   0f 44 f0                cmove  %eax,%esi
 //    c:   e9 00 00 00 00          jmpq   11 <foo+0x11>
 
-/// rule1 is only ok for c consisting of a single bit, so we set the
-/// confidence to medium. rule2 is always ok.
+/// rule1 is only ok for c consisting of a single bit. We try to catch
+/// the obvious false positives using python, but this only works for
+/// literals; it won't catch stuff hidden behind a macro. So we set
+/// the confidence to medium. rule2 is always ok.
 ///
 // unlikely(X) also matches X and likely(X).
 //
@@ -36,11 +38,29 @@ virtual org
 virtual report
 
 
-@rule1 depends on patch@
+@rule1a depends on patch@
 expression e;
+position p;
 constant c;
 @@
-- if (unlikely(!(e & c))) {
+  unlikely(!(e & c)@p)
+
+@script:python rule1b@
+c << rule1a.c;
+@@
+try:
+  x = int(c, 0)
+  if ((x & (x-1)) != 0):
+    cocci.include_match(False)
+except:
+  pass
+
+@rule1c depends on patch@
+expression rule1a.e;
+position rule1a.p;
+constant rule1a.c;
+@@
+- if (unlikely(!(e & c)@p)) {
 (
 -     e |= c;
 |
