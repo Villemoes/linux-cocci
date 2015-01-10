@@ -1,0 +1,189 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Getopt::Long;
+use File::Slurp;
+use File::Basename;
+
+require 5.10.0;
+
+my $progname = basename($0);
+
+my $spatch = 'spatch';
+my $parallel = 'parallel';
+my @parallel_opt = qw(--keep-order -m -L 100);
+my @spatch_opt = qw(--very-quiet --patch .);
+
+my $cocci;
+my $coccitxt;
+my $mode;
+
+my ($linux, $arch);
+
+my ($help, $usage);
+
+
+GetOptions("cocci=s"      => \$cocci,
+	   "mode=s"       => \$mode,
+	   "linux!"       => \$linux,
+	   "arch=s"       => \$arch,
+	   "spatch=s"     => \$spatch,
+	   "parallel=s"   => \$parallel,
+	   "I=s"          => sub { push @spatch_opt, '-I', $_[1]; },
+	   "spatch-opt|sopt=s"   => sub {push @spatch_opt, (split /\s+/, $_[1]); },
+	   "parallel-opt|popt=s" => sub {push @parallel_opt, (split /\s+/, $_[1]); },
+	   "help|h"   => \$help,
+	   "usage"    => \$usage,
+	  )
+    or usage(1);
+
+usage(0) if ($usage);
+help() if ($help);
+
+verify_gnu_parallel();
+
+check_linux();
+
+if (not defined $cocci) {
+    if (@ARGV && $ARGV[0] =~ m/\.cocci$/) {
+	$cocci = shift @ARGV;
+    } else {
+	err("no coccinelle script given");
+    }
+}
+@ARGV = ('.') unless @ARGV;
+
+
+$coccitxt = read_file($cocci)
+    or die "unable to read $cocci: $!";
+if (not defined $mode) {
+    # Use the first 'virtual' declaration.
+    if ($coccitxt =~ m(^virtual\s+([a-zA-Z]+)\b\s*)m) {
+	$mode = $1;
+	info("no mode given; using mode '%s'", $mode)
+    } else {
+	err("option --mode not given and no 'virtual' declaration found in .cocci file");
+    }
+}
+push @spatch_opt, '-D', $mode;
+push @spatch_opt, '--no-show-diff'
+    if ($mode eq 'report' || $mode eq 'org');
+
+$coccitxt =~ m!^virtual\s+$mode\b!m
+    or err("semantic patch '%s' does not appear to support the '%s' mode", $cocci, $mode);
+
+# The options given to spatch are first those from the .cocci file,
+# then those from the command-line, to allow the latter to override
+# the former.
+if ($coccitxt =~ m!^// Options: (.*)$!m) {
+    unshift @spatch_opt, split(/\s+/, $1);
+}
+
+# Verify that the .cocci file is valid and that spatch allows all the given options.
+verify_cocci();
+
+# Perl is no longer needed. Let's just exec. Then the exit value will
+# be the exit value of the sh -c instance launched to handle the pipe.
+exec("find @ARGV -name '*.c' | sort | ${parallel} @{parallel_opt} -- ${spatch} @{spatch_opt} --cocci-file ${cocci}");
+
+
+sub verify_gnu_parallel {
+    my $out = qx(${parallel} --version);
+    if ($@ || $out !~ m/^GNU parallel/) {
+	err("Failed to invoke GNU parallel using '${parallel}'");
+    }
+}
+
+sub check_linux {
+    $linux = 1 if defined $arch;
+    if (not defined $linux) {
+	$linux = -d 'kernel' && -f 'Kconfig' &&
+	    system("git rev-parse --quiet --verify 1da177e4c3f41524e886b7f1b8a0c1fc7321cac2 > /dev/null 2> /dev/null") == 0;
+    }
+    if ($linux) {
+	$arch //= 'x86';
+	push @spatch_opt, map { ('-I', $_) }
+	    ("arch/${arch}/include",
+	     "arch/${arch}/include/generated",
+	     "include",
+	     "arch/${arch}/include/uapi",
+	     "arch/${arch}/include/generated/uapi",
+	     "include/uapi",
+	     "include/generated/uapi",
+	     "include/linux/kconfig.h");
+    }
+}
+
+sub verify_cocci {
+    my $x = system("${spatch} --parse-cocci $cocci @spatch_opt > /dev/null");
+    if ($x) {
+	err("%s not valid or invalid option passed to spatch", $cocci);
+    }
+}
+
+sub p {
+    my $handle = shift;
+    my $type = shift;
+    my $fmt = shift;
+    $fmt .= "\n" unless substr($fmt, -1) eq "\n";
+    printf $handle "%s: $fmt", $type, @_;
+}
+
+sub err {
+    p(\*STDERR, "error", @_);
+    exit(1);
+}
+
+sub wrn { p(\*STDERR, "warning", @_); }
+sub info { p(\*STDOUT, "info", @_); }
+
+sub usage {
+    my $e = shift // 1;
+    print <<EOF;
+$progname [--mode [patch|org|...]] /path/to/file.cocci [dirs|.c-files]
+EOF
+    exit($e);
+}
+
+sub help {
+
+    print <<EOF;
+$progname [--mode [patch|org|...]] /path/to/file.cocci [dirs|.c-files]
+
+Run spatch in parallel, using GNU parallel.
+
+Options:
+
+--mode MODE         Set the mode, typically one of report, patch, org, context.
+--cocci COCCIFILE   The semantic patch to apply.
+--linux             Set some -I flags appropriate for the linux kernel.
+--arch ARCH         The architecture to use for --linux, default x86. Implies --linux.
+--spatch SPATCH     Path to spatch binary, default 'spatch'.
+--parallel PARALLEL Path to GNU parallel, default 'parallel'.
+--sopt OPT          Extra options to pass to spatch. The argument will be split at
+                    white-space and each word passed as a separate option. May be
+                    used multiple times.
+--popt OPT          As for --sopt, but for passing to GNU parallel.
+-I DIR              Shorthand for --sopt '-I DIR'.
+
+The --cocci option is mandatory, but the .cocci file can also be given
+as the first non-option argument.
+
+All (other) trailing arguments are passed to find(1) as paths, with an
+expression of "-name '*.c'"; they may hence include both directories
+and .c-files. If there are no trailing arguments, the current
+directory is simply used. So the minimal invocation is simply
+
+  $progname file.cocci
+
+If no --mode argument is given, the .cocci file is parsed for "virtual
+foobar" declarations, and the first such is used as the mode.
+
+$progname tries to detect whether it is invoked from the top-level directory
+of a linux kernel repository, so usually the --linux option is not
+needed. You may pass --no-linux if for some reason you wish to
+suppress its effect.
+EOF
+    exit(0);
+}
