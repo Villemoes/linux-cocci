@@ -25,8 +25,8 @@
 // Confidence: High
 // Options: --no-includes --include-headers
 
-virtual context
 virtual patch
+virtual context
 virtual org
 virtual report
 
@@ -73,4 +73,26 @@ position p;
 @@
 - sprintf@p(dst, "%s", s)
 + strlcpy(dst, s, INT_MAX) /* used to be sprintf(), which uses INT_MAX internally anyway */
+
+
+@rule4 depends on !patch@
+expression dst;
+expression s;
+position p;
+@@
+(
+* sprintf@p(dst, "%s", s);
+|
+* sprintf@p(dst, s);
+)
+
+@script:python depends on org@
+p << rule4.p;
+@@
+cocci.print_main("sprintf may be repaced by strcpy", p)
+
+@script:python depends on report@
+p << rule4.p;
+@@
+coccilib.report.print_report(p[0], "sprintf may be repaced by strcpy")
 
