@@ -27,11 +27,15 @@ virtual report
 // See comment on puts("\n") --> putc('\n') below.
 @rule0 depends on patch@
 symbol seq_puts;
+symbol seq_buf_puts;
 symbol trace_seq_puts;
 @@
 (
 - seq_puts
 + __seq_puts__HACK
+|
+- seq_buf_puts
++ __seq_buf_puts__HACK
 |
 - trace_seq_puts
 + __trace_seq_puts__HACK
@@ -43,7 +47,7 @@ expression s;
 expression t;
 position p;
 @@
-  \(seq_printf@p \| trace_seq_printf@p\)(s, t)
+  \(seq_printf@p \| seq_buf_printf@p \| trace_seq_printf@p\)(s, t)
   
 // In order to DTRT when the format string contains %%, we need to
 // process it with python. If t is actually an expression and not just
@@ -88,6 +92,9 @@ identifier rule1b.tt;
 - seq_printf@p
 + seq_puts
 |
+- seq_buf_printf@p
++ seq_buf_puts
+|
 - trace_seq_printf@p
 + trace_seq_puts
 )
@@ -102,6 +109,9 @@ expression t;
 (
 - seq_printf
 + seq_puts
+|
+- seq_buf_printf
++ seq_buf_puts
 |
 - trace_seq_printf
 + trace_seq_puts
@@ -118,6 +128,9 @@ expression t;
 (
 - seq_printf
 + seq_putc
+|
+- seq_buf_printf
++ seq_buf_putc
 |
 - trace_seq_printf
 + trace_seq_putc
@@ -147,7 +160,7 @@ expression s;
 constant c;
 position p;
 @@
-  \(trace_seq_puts@p\|seq_puts@p\)(s, c)
+  \(trace_seq_puts@p\|seq_buf_puts@p\|seq_puts@p\)(s, c)
 
 // Use python to check whether the string constant consists of a
 // single character, and if so, create an "identifier" containing that
@@ -176,6 +189,9 @@ identifier putc2.ch;
 - seq_puts@p
 + seq_putc
 |
+- seq_buf_puts@p
++ seq_buf_putc
+|
 - trace_seq_puts@p
 + trace_seq_putc
 )
@@ -185,11 +201,15 @@ identifier putc2.ch;
 
 @fix_hack depends on patch@
 symbol __seq_puts__HACK;
+symbol __seq_buf_puts__HACK;
 symbol __trace_seq_puts__HACK;
 @@
 (
 - __seq_puts__HACK
 + seq_puts
+|
+- __seq_buf_puts__HACK
++ seq_buf_puts
 |
 - __trace_seq_puts__HACK
 + trace_seq_puts

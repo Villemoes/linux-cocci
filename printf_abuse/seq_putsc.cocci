@@ -21,7 +21,7 @@ position p;
 expression s;
 constant c;
 @@
-  \(trace_seq_puts@p\|seq_puts@p\)(s, c)
+  \(trace_seq_puts@p \| seq_buf_puts@p \| seq_puts@p\)(s, c)
 
 // Use python to check whether the string constant consists of a
 // single character, and if so, create an "identifier" containing that
@@ -49,6 +49,9 @@ identifier putc2.ch;
 (
 - seq_puts@p
 + seq_putc
+|
+- seq_buf_puts@p
++ seq_buf_putc
 |
 - trace_seq_puts@p
 + trace_seq_putc
