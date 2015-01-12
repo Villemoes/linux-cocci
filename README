@@ -16,7 +16,8 @@ devnull: This is where .cocci files go when they've served their purpose.
 
 misc: Stuff I haven't categorized yet.
 
-qnd: quick'n'dirty scripts.
+microopt: Various micro-optimizations that make the generated code
+smaller and/or faster.
 
 wtf: This directory is for scripts detecting stuff such as double
 inequalities that don't work in C as they do in Python and
