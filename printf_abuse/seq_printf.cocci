@@ -214,3 +214,29 @@ symbol __trace_seq_puts__HACK;
 - __trace_seq_puts__HACK
 + trace_seq_puts
 )
+
+// @rule4 depends on !patch@
+// identifier i =~ "^(seq|seq_buf|trace_seq)_printf$";
+// expression s;
+// expression t;
+// position p;
+// @@
+// (
+// * i@p(s, "%c", t)
+// |
+// * i@p(s, "%s", t)
+// |
+// * i@p(s, t)
+// )
+
+// @script:python depends on org@
+// i << rule4.i;
+// p << rule4.p;
+// @@
+// cocci.print_main("%s may be repaced by puts/putc" % i, p)
+
+// @script:python depends on report@
+// i << rule4.i;
+// p << rule4.p;
+// @@
+// coccilib.report.print_report(p[0], "%s may be repaced by puts/putc" % i)
