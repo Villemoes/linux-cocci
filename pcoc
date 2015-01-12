@@ -30,6 +30,7 @@ GetOptions("cocci=s"      => \$cocci,
 	   "arch=s"       => \$arch,
 	   "spatch=s"     => \$spatch,
 	   "parallel=s"   => \$parallel,
+	   "ooo"          => sub { @parallel_opt = grep { $_ ne '--keep-order' } @parallel_opt; },
 	   "I=s"          => sub { push @spatch_opt, '-I', $_[1]; },
 	   "spatch-opt|sopt=s"   => sub {push @spatch_opt, (split /\s+/, $_[1]); },
 	   "parallel-opt|popt=s" => sub {push @parallel_opt, (split /\s+/, $_[1]); },
@@ -166,6 +167,8 @@ Options:
                     used multiple times.
 --popt OPT          As for --sopt, but for passing to GNU parallel.
 -I DIR              Shorthand for --sopt '-I DIR'.
+--ooo               Out-of-order: Do not pass --keep-order to parallel, which is
+                    otherwise the default.
 
 The --cocci option is mandatory, but the .cocci file can also be given
 as the first non-option argument.
