@@ -69,9 +69,22 @@ constant rule1a.c;
 - }
 + e |= c;
 
+@rule2 depends on patch@
+expression e;
+expression bit;
+constant c;
+@@
+- if (unlikely(!(e & (\( 1 <<@bit c \| BIT(c)@bit \| BIT_ULL(c)@bit \))))) {
+(
+-     e |= bit;
+|
+-     e += bit;
+)
+- }
++ e |= bit;
 
 // There are even more ways the LSB could be tested and manipulated.
-@rule2 depends on patch@
+@rule3 depends on patch@
 expression e;
 @@
 - if (unlikely(
