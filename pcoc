@@ -151,7 +151,8 @@ sub dbg { p(\*STDERR, "debug", @_) if $verbose >= 2; }
 
 sub usage {
     my $e = shift // 1;
-    print <<EOF;
+    my $handle = $e ? \*STDERR : \*STDOUT;
+    print $handle <<EOF;
 $progname [--mode [patch|org|...]] /path/to/file.cocci [dirs|.c-files]
 EOF
     exit($e);
