@@ -63,16 +63,17 @@ if (not defined $mode) {
     if ($coccitxt =~ m(^virtual\s+([a-zA-Z]+)\b\s*)m) {
 	$mode = $1;
 	info("no mode given; using mode '%s'", $mode)
-    } else {
-	err("option --mode not given and no 'virtual' declaration found in .cocci file");
     }
 }
-push @spatch_opt, '-D', $mode;
-push @spatch_opt, '--no-show-diff'
-    if ($mode eq 'report' || $mode eq 'org');
 
-$coccitxt =~ m!^virtual\s+$mode\b!m
-    or err("semantic patch '%s' does not appear to support the '%s' mode", $cocci, $mode);
+if ($mode) {
+    push @spatch_opt, '-D', $mode;
+    push @spatch_opt, '--no-show-diff'
+	if ($mode eq 'report' || $mode eq 'org');
+
+    $coccitxt =~ m!^virtual\s+$mode\b!m
+	or err("semantic patch '%s' does not appear to support the '%s' mode", $cocci, $mode);
+}
 
 # The options given to spatch are first those from the .cocci file,
 # then those from the command-line, to allow the latter to override
