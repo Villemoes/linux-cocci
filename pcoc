@@ -22,6 +22,7 @@ my $mode;
 my ($linux, $arch);
 
 my ($help, $usage);
+my $verbose = 0;
 
 
 GetOptions("cocci=s"      => \$cocci,
@@ -36,6 +37,9 @@ GetOptions("cocci=s"      => \$cocci,
 	   "parallel-opt|popt=s" => sub {push @parallel_opt, (split /\s+/, $_[1]); },
 	   "help|h"   => \$help,
 	   "usage"    => \$usage,
+	   "verbose+"  => \$verbose,
+	   "debug" => sub { $verbose = 2; },
+	   "quiet" => sub { $verbose = -1; },
 	  )
     or usage(1);
 
@@ -87,14 +91,17 @@ verify_cocci();
 
 # Perl is no longer needed. Let's just exec. Then the exit value will
 # be the exit value of the sh -c instance launched to handle the pipe.
-exec("find @ARGV -name '*.c' | sort | ${parallel} @{parallel_opt} -- ${spatch} @{spatch_opt} --cocci-file ${cocci}");
+my $cmdline = "find @ARGV -name '*.c' | sort | ${parallel} @{parallel_opt} -- ${spatch} @{spatch_opt} --cocci-file ${cocci}";
+dbg("exec'ing '%s'", $cmdline);
+exec($cmdline);
 
 
 sub verify_gnu_parallel {
     my $out = qx(${parallel} --version);
-    if ($@ || $out !~ m/^GNU parallel/) {
+    if ($@ || $out !~ m/^GNU parallel (.*)$/m) {
 	err("Failed to invoke GNU parallel using '${parallel}'");
     }
+    dbg("found GNU parallel version %s", $1);
 }
 
 sub check_linux {
@@ -102,6 +109,7 @@ sub check_linux {
     if (not defined $linux) {
 	$linux = -d 'kernel' && -f 'Kconfig' &&
 	    system("git rev-parse --quiet --verify 1da177e4c3f41524e886b7f1b8a0c1fc7321cac2 > /dev/null 2> /dev/null") == 0;
+	dbg("detected linux git repository, setting appropriate options");
     }
     if ($linux) {
 	$arch //= 'x86';
@@ -137,8 +145,9 @@ sub err {
     exit(1);
 }
 
-sub wrn { p(\*STDERR, "warning", @_); }
-sub info { p(\*STDOUT, "info", @_); }
+sub wrn { p(\*STDERR, "warning", @_) if $verbose >= 0; }
+sub info { p(\*STDERR, "info", @_) if $verbose >= 1; }
+sub dbg { p(\*STDERR, "debug", @_) if $verbose >= 2; }
 
 sub usage {
     my $e = shift // 1;
