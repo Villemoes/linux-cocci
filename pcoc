@@ -14,6 +14,7 @@ my $spatch = 'spatch';
 my $parallel = 'parallel';
 my @parallel_opt = qw(--keep-order -m -L 100);
 my @spatch_opt = qw(--very-quiet --patch .);
+my $include_headers;
 
 my $cocci;
 my $coccitxt;
@@ -33,6 +34,7 @@ GetOptions("cocci=s"      => \$cocci,
 	   "parallel=s"   => \$parallel,
 	   "ooo"          => sub { @parallel_opt = grep { $_ ne '--keep-order' } @parallel_opt; },
 	   "I=s"          => sub { push @spatch_opt, '-I', $_[1]; },
+	   "include-headers" => \$include_headers,
 	   "spatch-opt|sopt=s"   => sub {push @spatch_opt, (split /\s+/, $_[1]); },
 	   "parallel-opt|popt=s" => sub {push @parallel_opt, (split /\s+/, $_[1]); },
 	   "help|h"   => \$help,
@@ -85,13 +87,18 @@ if ($mode) {
 if ($coccitxt =~ m!^// Options: (.*)$!m) {
     unshift @spatch_opt, split(/\s+/, $1);
 }
+if (grep {$_ eq '--include-headers'} @spatch_opt) {
+    $include_headers = 1;
+}
 
 # Verify that the .cocci file is valid and that spatch allows all the given options.
 verify_cocci();
 
+my $glob = $include_headers ? "*.[ch]" : "*.c";
+
 # Perl is no longer needed. Let's just exec. Then the exit value will
 # be the exit value of the sh -c instance launched to handle the pipe.
-my $cmdline = "find @ARGV -name '*.c' | sort | ${parallel} @{parallel_opt} -- ${spatch} @{spatch_opt} --cocci-file ${cocci}";
+my $cmdline = "find @ARGV -name '$glob' | sort | ${parallel} @{parallel_opt} -- ${spatch} @{spatch_opt} --cocci-file ${cocci}";
 dbg("exec'ing '%s'", $cmdline);
 exec($cmdline);
 
@@ -180,6 +187,8 @@ Options:
 -I DIR              Shorthand for --sopt '-I DIR'.
 --ooo               Out-of-order: Do not pass --keep-order to parallel, which is
                     otherwise the default.
+--include-headers   Also process .h files. This is automatically set if the
+                    .cocci contains --include-headers in its Options: line.
 
 The --cocci option is mandatory, but the .cocci file can also be given
 as the first non-option argument.
