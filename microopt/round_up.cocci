@@ -60,7 +60,13 @@ virtual patch
 expression e;
 @@
 - if (unlikely(e & 1)) {
+(
 -     e++;
+|
+-     ++e;
+|
+-     e += 1;
+)
 - }
 + e = ALIGN(e, 2);
 
@@ -74,7 +80,13 @@ expression e;
 expression e;
 @@
 - if (unlikely(e % 2 != 0)) {
+(
 -     e++;
+|
+-     ++e;
+|
+-     e += 1;
+)
 - }
 + e = ALIGN(e, 2);
 
