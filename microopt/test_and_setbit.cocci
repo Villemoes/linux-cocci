@@ -51,7 +51,7 @@
 // the confidence to medium. rule2 and rule3 are always ok.
 //
 // Confidence: Medium
-// Options: --no-includes 
+// Options: --no-includes --include-headers
 
 virtual patch
 virtual context

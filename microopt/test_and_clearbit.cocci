@@ -57,7 +57,7 @@
 // always ok.
 //
 // Confidence: High
-// Options: --no-includes 
+// Options: --no-includes --include-headers
 
 virtual patch
 virtual context
