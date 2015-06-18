@@ -49,42 +49,46 @@ coccilib.report.print_report(p[0], "Comparison operator abuse; probably needs a 
 
 @rule2a@
 expression E1, E2;
-position p;
+expression E;
 @@
 (
-  (E1 == E2)@p
+  E1 ==@E E2
 |
-  (E1 != E2)@p
+  E1 !=@E E2
 |
-  (E1 && E2)@p
+  E1 &&@E E2
 |
-  (E1 || E2)@p
+  E1 ||@E E2
 |
-  (!E1)@p
+  !@E E1
 )
 
 @rule2b@
 expression E3;
-position rule2a.p;
+expression rule2a.E;
 position pp;
 @@
 (
-* (...)@p <@pp E3
+* (E) <@pp E3
 |
-* (...)@p >@pp E3
+* (E) >@pp E3
 |
-* (...)@p <=@pp E3
+* (E) <=@pp E3
 |
-* (...)@p >=@pp E3
+* (E) >=@pp E3
+|
+* (E) ==@pp E3
+|
+* (E) !=@pp E3
 )
 
 @script:python depends on org@
 pp << rule2b.pp;
 @@
-cocci.print_main("Using a boolean result as an operand of an inequality is confusing", pp)
+cocci.print_main("Using a boolean result as an operand of an (in)equality is confusing", pp)
 
 @script:python depends on report@
 pp << rule2b.pp;
 @@
-coccilib.report.print_report(pp[0], "Using a boolean result as an operand of an inequality is confusing")
+coccilib.report.print_report(pp[0], "Using a boolean result as an operand of an (in)equality is confusing")
 
