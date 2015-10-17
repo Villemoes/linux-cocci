@@ -38,7 +38,7 @@
 
 virtual patch
 
-@rule1a depends on patch@
+@rule1a depends on patch disable not_int2@
 expression src, dst;
 constant c;
 @@
@@ -56,7 +56,7 @@ try:
 except:
   pass
 
-@rule1c depends on patch@
+@rule1c depends on patch disable not_int2@
 expression rule1a.src, rule1a.dst;
 constant rule1a.c;
 @@
@@ -65,7 +65,7 @@ constant rule1a.c;
 - }
 + dst |= src & c;
 
-@rule2a depends on patch@
+@rule2a depends on patch disable not_int2@
 expression src, dst;
 constant c;
 @@
@@ -74,7 +74,7 @@ constant c;
 - }
 + dst |= src & (1 << c);
 
-@rule2b depends on patch@
+@rule2b depends on patch disable not_int2@
 expression src, dst;
 constant c;
 @@
@@ -83,7 +83,7 @@ constant c;
 - }
 + dst |= src & BIT(c);
 
-@rule2c depends on patch@
+@rule2c depends on patch disable not_int2@
 expression src, dst;
 constant c;
 @@
@@ -99,7 +99,7 @@ constant c;
 // manually checking the generated patches, remember to also take
 // types (and signedness) into account; something which is easy to
 // screw up with bitops transformations.
-@rule3a depends on patch@
+@rule3a depends on patch disable not_int2@
 expression src, dst;
 constant c;
 @@
