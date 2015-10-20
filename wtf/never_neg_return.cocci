@@ -26,7 +26,7 @@ identifier i = {sprintf, snprintf, vsprintf, vsnprintf, scnprintf, vscnprintf,
 	 _copy_from_user, _copy_to_user,
 	 __copy_from_user, __copy_to_user,
 	 __copy_from_user_inatomic,  __copy_to_user_inatomic,
-	 clear_user, __clear_user,
+	 clear_user, __clear_user, copy_in_user,
 	 strlen_user, strnlen_user};
 position p;
 @@
@@ -53,7 +53,7 @@ identifier i = {sprintf, snprintf, vsprintf, vsnprintf, scnprintf, vscnprintf,
 	 _copy_from_user, _copy_to_user,
 	 __copy_from_user, __copy_to_user,
 	 __copy_from_user_inatomic,  __copy_to_user_inatomic,
-	 clear_user, __clear_user,
+	 clear_user, __clear_user, copy_in_user,
 	 strlen_user, strnlen_user};
 position p;
 @@
