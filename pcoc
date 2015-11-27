@@ -98,7 +98,10 @@ my $glob = $include_headers ? "*.[ch]" : "*.c";
 
 # Perl is no longer needed. Let's just exec. Then the exit value will
 # be the exit value of the sh -c instance launched to handle the pipe.
-my $cmdline = "find @ARGV -name '$glob' | sort | ${parallel} @{parallel_opt} -- ${spatch} @{spatch_opt} --cocci-file ${cocci}";
+my $cmdline = "find @ARGV -name '$glob' " .
+    " | grep -v 'drivers/gpu/drm/.*\\.h\$' " .
+    " | sort " .
+    " | ${parallel} @{parallel_opt} -- ${spatch} @{spatch_opt} --cocci-file ${cocci}";
 dbg("exec'ing '%s'", $cmdline);
 exec($cmdline);
 
