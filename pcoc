@@ -12,7 +12,7 @@ my $progname = basename($0);
 
 my $spatch = 'spatch';
 my $parallel = 'parallel';
-my @parallel_opt = qw(--keep-order -m -L 100);
+my @parallel_opt = qw(--keep-order -m -L 20);
 my @spatch_opt = qw(--very-quiet --patch .);
 my $include_headers;
 
